@@ -1,4 +1,6 @@
 <?php
+namespace Lib\Intacctws;
+
 /**
  * Created by JetBrains PhpStorm.
  * User: aaron

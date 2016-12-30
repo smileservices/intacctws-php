@@ -1,4 +1,6 @@
 <?php
+namespace Lib\Intacctws;
+
 /**
  * Copyright (c) 2013, Intacct OpenSource Initiative
  * All rights reserved.
@@ -121,7 +123,7 @@ class api_util {
                         if (substr($_k,0,1) == '@') {
                             $pad = ($attrString == "") ? " " : "";
                             $aname = substr($_k,1);
-                            $aval  = $v;
+                            $aval  = htmlspecialchars($v);
                             //$attrs = explode(':', substr($v,1));
                             //$attrString .= $pad . $attrs[0].'="'.$attrs[1].'" ';
                             $attrString .= $pad . $aname.'="'.$aval.'" ';
@@ -142,7 +144,8 @@ class api_util {
                 //    $_xml .= "<$node>" . htmlspecialchars($v) . "</$node>";
                 //}
                 //
-                $firstKey = array_shift(array_keys($value));
+                $arrKeys = array_keys($value);
+                $firstKey = array_shift($arrKeys);
                 if (is_array($value[$firstKey]) || count($value) > 0 ) {
                     $_xml = self::phpToXml($node,$value) ; 
                 }

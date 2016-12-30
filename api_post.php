@@ -1,4 +1,6 @@
 <?php
+namespace Lib\Intacctws;
+
 include_once('api_util.php');
 include_once('api_viewFilter.php');
 include_once('api_viewFilters.php');
@@ -75,7 +77,7 @@ class api_post {
      */
     public static function create($records, api_session $session) {
 
-        if (count($records) > 100) throw new Exception("Attempting to create more than 100 records. (" . count($records) . ") ");
+        if (count($records) > 100) throw new \Exception("Attempting to create more than 100 records. (" . count($records) . ") ");
 
         // Convert the record into an xml structure
         $createXml = "<create>";
@@ -106,7 +108,7 @@ class api_post {
      * @return array An array of 'ids' updated in the method invocation
      */
     public static function update($records, api_session $session) {
-        if (count($records) > 100) throw new Exception("Attempting to update more than 100 records.");
+        if (count($records) > 100) throw new \Exception("Attempting to update more than 100 records.");
 
         // convert the $records array into an xml structure
         $updateXml = "<update>";
@@ -144,7 +146,7 @@ class api_post {
     public static function upsert($object, $records, $nameField, $keyField, api_session $session, $readOnlyName = false)
     {
         if (count($records) > 100) {
-            throw new Exception("You can only upsert up to 100 records at a time.  You passed " . count($records) . " $object records.");
+            throw new \Exception("You can only upsert up to 100 records at a time.  You passed " . count($records) . " $object records.");
         }
         $keys = array();
         foreach ($records as $record) {
@@ -430,7 +432,7 @@ class api_post {
                 }
                 catch (Exception $ex) {
                     // for now, pass the exception on
-                    Throw new Exception($ex);
+                    Throw new \Exception($ex);
                 }
                 if ($pageCount < $pageSize || $count >= $maxRecords) break;
             }
@@ -466,7 +468,6 @@ class api_post {
         $readXml .= "<pagesize>$pageSize</pagesize>";
         $readXml .= "</readByQuery>";
         dbg($readXml);
-
         $response = api_post::post($readXml,$session);
         dbg($response);
         if ($returnFormatArg == api_returnFormat::CSV && trim($response) == "") {
@@ -507,7 +508,7 @@ class api_post {
                         $xml .= $page;
                     break;
                     default:
-                        throw new Exception("Invalid return format: " . $returnFormat);
+                        throw new \Exception("Invalid return format: " . $returnFormat);
                     break;
                 }
 
@@ -588,7 +589,7 @@ class api_post {
                         $xml .= $page;
                     break;
                     default:
-                        throw new Exception("Invalid return format: " . $returnFormat);
+                        throw new \Exception("Invalid return format: " . $returnFormat);
                     break;
                 }
 
@@ -734,7 +735,7 @@ class api_post {
                 }
                 catch (Exception $ex) {
                     // for now, pass the exception on
-                    Throw new Exception($ex);
+                    Throw new \Exception($ex);
                 }
                 if ($pageCount < $pageSize || $count >= $maxRecords) break;
             } while ($try < $max_try); 
@@ -808,7 +809,7 @@ class api_post {
                 try {
                     api_post::delete($object, implode(",", $delIds), $session);
                 }
-                catch (Exception $ex) {
+                catch (\Exception $ex) {
                     $delIds = array();
                     continue;
                 }
@@ -920,25 +921,49 @@ class api_post {
         $count = 0; // retry five times on too many operations
         $res = "";
         while (true) {
+            dbg('XML REQUEST: '.$xml);
             $res = api_post::execute($xml, $endPoint);
-
+            dbg('XML RESPONSE: '.$res);
             // If we didn't get a response, we had a poorly constructed XML request.
             try {
                 api_post::validateResponse($res, $xml);
                 break;
             }
-            catch (Exception $ex) {
+            catch (\Exception $ex) {
                 if (strpos($ex->getMessage(), "too many operations") !== false) {
                     $count++;
                     if ($count >= 5) {
-                        throw new Exception($ex);
+                        throw new \Exception($ex->getMessage());
                     }
                 } else {
-                    throw new Exception($ex);
+                    throw new \Exception($ex->getMessage());
                 }
             }
         }
         return $res;
+    }
+
+    public static function createXMLRequest($xml, api_session $session, $dtdVersion="3.0",$multiFunc=false)
+    {
+        $sessionId = $session->sessionId;
+        $senderId = $session->senderId;
+        $senderPassword = $session->senderPassword;
+
+        $transaction = ($session->transaction) ? 'true' : 'false';
+
+        $templateHead = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><request><control><senderid>{$senderId}</senderid><password>{$senderPassword}</password><controlid>foobar</controlid><uniqueid>false</uniqueid><dtdversion>{$dtdVersion}</dtdversion></control><operation transaction='{$transaction}'><authentication><sessionid>{$sessionId}</sessionid></authentication>";
+        $contentHead = "<content><function controlid=\"foobar\">";
+        $contentFoot ="</function></content>";
+        $templateFoot ="</operation></request>";
+
+        if ($multiFunc) {
+            $xml = $templateHead . $xml . $templateFoot;
+        }
+        else {
+            $xml = $templateHead . $contentHead . $xml . $contentFoot . $templateFoot;
+        }
+
+        return $xml;
     }
 
     /**
@@ -971,7 +996,7 @@ class api_post {
         $response = curl_exec( $ch );
         $error = curl_error($ch);
         if ($error != "") {
-            throw new exception($error);
+            throw new \Exception($error);
         }
         curl_close( $ch );
 
@@ -1043,7 +1068,7 @@ class api_post {
         // look for a failure in the operation, but not the result
         if (isset($simpleXml->operation->errormessage)) {
             $error = $simpleXml->operation->errormessage->error[0];
-            throw new Exception("[ERROR: " . $error->errorno . "] " . $error->description2);
+            throw new \Exception("[ERROR: " . $error->errorno . "] " . $error->description2);
         }
         // if we didn't get an operation, the request failed and we should raise an exception
         // with the error details
@@ -1051,7 +1076,7 @@ class api_post {
         if (!isset($simpleXml->operation)) {
 
             if (isset($simpleXml->errormessage)) {
-                throw new Exception("[Error] " . api_util::xmlErrorToString($simpleXml->errormessage));
+                throw new \Exception("[Error] " . api_util::xmlErrorToString($simpleXml->errormessage));
             }
         }
         else { 
@@ -1059,7 +1084,7 @@ class api_post {
             foreach ($results as $res) {
                 if ($res->status == "failure" || $res->status == "aborted") {
                     $msg = api_util::xmlErrorToString($res->errormessage);
-                    throw new Exception("[Error] " . $msg);
+                    throw new \Exception("[Error] " . $msg);
                 }
             }
         }
@@ -1076,7 +1101,7 @@ class api_post {
     private static function processUpdateResults($response, $objectName) {
         $simpleXml = simplexml_load_string($response);
         if ($simpleXml === false) {
-            throw new Exception("Invalid XML response: \n " . var_export($response, true));
+            throw new \Exception("Invalid XML response: \n " . var_export($response, true));
         }
 
         $objects = array();
@@ -1085,7 +1110,7 @@ class api_post {
         if ($status != "success") {
             //find the problem and raise an exception
             $error = $simpleXml->operation->result->errormessage;
-            throw new Exception("[Error] " . api_util::xmlErrorToString($error));
+            throw new \Exception("[Error] " . api_util::xmlErrorToString($error));
         }
 
         $updates = array();
@@ -1124,14 +1149,14 @@ class api_post {
         // Is there a problem with the XML request?
         if ((string)$simpleXml->operation->result->status == 'false') {
             $error = $simpleXml->operation->errormessage[0];
-            throw new Exception("[Error] " . api_util::xmlErrorToString($error));
+            throw new \Exception("[Error] " . api_util::xmlErrorToString($error));
         }
 
         // is there a problem with the method invocation?
         $status = $simpleXml->operation->result->status;
         if ((string)$status != 'success') {
             $error = $simpleXml->operation->result->errormessage;
-            throw new Exception("[Error] " . api_util::xmlErrorToString($error));
+            throw new \Exception("[Error] " . api_util::xmlErrorToString($error));
         }
         else {
             return; // no error found.
@@ -1153,12 +1178,12 @@ class api_post {
 
         $success = $xml->operation->result->status;
         if ($success != "success") {
-            throw new Exception("Get List failed");
+            throw new \Exception("Get List failed");
             return;
         }
         
         if ($returnFormat != api_returnFormat::PHPOBJ) {
-            throw new Exception("Only PHPOBJ is supported for returnFormat currently.");
+            throw new \Exception("Only PHPOBJ is supported for returnFormat currently.");
             return;
         }
 
@@ -1224,7 +1249,7 @@ class api_post {
             // this seems really expensive
             $objAry = json_decode($response);
             // todo: JSON doesn't work because we don't know what object to refer to
-            throw new Exception("The JSON return format is not implemented yet.");
+            throw new \Exception("The JSON return format is not implemented yet.");
         }
         elseif ($returnFormat == api_returnFormat::XML) {
             $xmlObj = simplexml_load_string($response);
@@ -1244,7 +1269,7 @@ class api_post {
             return $csv;
         }
         else {
-            throw new Exception("Unknown return format $returnFormat.  Refer to the api_returnFormat class.");
+            throw new \Exception("Unknown return format $returnFormat.  Refer to the api_returnFormat class.");
         }
 
     }

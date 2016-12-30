@@ -1,4 +1,6 @@
 <?php
+namespace Lib\Intacctws;
+
 include_once "api_fieldDef.php";
 /**
  * Created by JetBrains PhpStorm.

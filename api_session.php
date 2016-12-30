@@ -1,4 +1,5 @@
 <?php
+namespace Lib\Intacctws;
 include_once('api_post.php');
 
 class api_session {
@@ -162,7 +163,6 @@ class api_session {
         $xml = str_replace("{1%}", $sessionId, $xml);
         $xml = str_replace("{4%}", $senderId, $xml);
         $xml = str_replace("{5%}", $senderPassword, $xml);
-
         $response = api_post::execute($xml, self::DEFAULT_LOGIN_URL);
 
         self::validateConnection($response);
@@ -179,30 +179,30 @@ class api_session {
     private static function validateConnection($response) {
         $simpleXml = simplexml_load_string($response);
         if ($simpleXml === false) {
-            throw new Exception("Invalid XML response: \n" . var_export($response, true));
+            throw new \Exception("Invalid XML response: \n" . var_export($response, true));
         }
 
         if ((string)$simpleXml->control->status == 'failure') {
-            throw new Exception(api_util::xmlErrorToString($simpleXml->errormessage));
+            throw new \Exception(api_util::xmlErrorToString($simpleXml->errormessage));
         }
 
         if (!isset($simpleXml->operation)) {
             if (isset($simpleXml->errormessage)) {
-                throw new Exception(api_util::xmlErrorToString($simpleXml->errormessage->error[0]));
+                throw new \Exception(api_util::xmlErrorToString($simpleXml->errormessage->error[0]));
             }
         }
 
         if (isset($simpleXml->operation->authentication->status)) {
             if ($simpleXml->operation->authentication->status != 'success') {
                 $error = $simpleXml->operation->errormessage;
-                throw new Exception(" [Error] " . (string)$error->error[0]->description2);
+                throw new \Exception(" [Error] " . (string)$error->error[0]->description2);
             }
         }
 
         $status = $simpleXml->operation->result->status;
         if ((string)$status != 'success') {
             $error = $simpleXml->operation->result->errormessage;
-            throw new Exception(" [Error] " . (string)$error->error[0]->description2);
+            throw new \Exception(" [Error] " . (string)$error->error[0]->description2);
         }
         else {
             return; // no error found.
