@@ -146,8 +146,9 @@ class api_util {
                 $firstKey = array_shift($valuekeys);
                 if (is_array($value[$firstKey]) || count($value) > 0 ) {
                     $_xml = self::phpToXml($node,$value) ; 
-                }
-                else {
+                } elseif (count($value) == 0) {
+                    $_xml .= "<$node></$node>";
+                } else {
                     $_xml = self::phpToXml($node,$value) ; 
                     $v = $value[$firstKey];
                     $_xml .= "<$node>" . htmlspecialchars($v) . "</$node>";
