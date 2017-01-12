@@ -273,16 +273,18 @@ class api_post {
      * Run any Intacct API method not directly implemented in this class.  You must pass
      * valid XML for the method you wish to invoke.
      * @param string $object the object to list
-     * @param Array $filters filters in a phpObj that will convert to get_list filters in phpToXml
+     * @param Array $filters filters in a phpObj that will convert to 
+     filters in phpToXml
      * @param api_session $session  an api_session instance with a valid connection
      * @param string $dtdVersion DTD Version.  Either "2.1" or "3.0".  Defaults to "2.1"
      * @return String the XML response from Intacct
      */
-    public static function get_list($object, $filter, $sorts, $fields, api_session $session, $dtdVersion="2.1") {
+    public static function get_list($object, $filter, $sorts, $fields, api_session $session, $dtdVersion="2.1", $showprivate="true") {
         $get_list = array();
         $get_list['@object'] = $object;
         $get_list['@start'] = 0;
         $get_list['@maxitems'] = 100;
+        $get_list['@showprivate'] = $showprivate;
 
         if ($filter != null) {
             $get_list['filter'] = $filter;
