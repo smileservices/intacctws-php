@@ -239,8 +239,8 @@ class api_post {
      * @param string $dtdVersion Either "2.1" or "3.0" defaults to "3.0"
      * @return String the XML response from Intacct
      */
-    public static function otherMethod($xml, api_session $session, $dtdVersion="3.0") {
-        return api_post::post($xml, $session,$dtdVersion);
+    public static function otherMethod($xml, api_session $session, $dtdVersion="3.0", $multifunc = false) {
+        return api_post::post($xml, $session,$dtdVersion, $multifunc);
     }
 
     /**
