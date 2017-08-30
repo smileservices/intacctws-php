@@ -1113,11 +1113,11 @@ class api_post {
      * @throws Exception
      */
     private static function processUpdateResults($response, $objectName) {
+        $objectName = strtolower($objectName);
         $simpleXml = simplexml_load_string($response);
         if ($simpleXml === false) {
             throw new Exception("Invalid XML response: \n " . var_export($response, true));
-        }
-
+        }        
         $objects = array();
         // check to see if there's an error in the response
         $status = $simpleXml->operation->result->status;
